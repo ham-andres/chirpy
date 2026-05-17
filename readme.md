@@ -47,9 +47,21 @@ In this phase of the project, we focused on transitioning from a basic server to
 Implemented an HTTP server capable of parsing and serving JSON data. 
 Used specialized HTTP clients like cURL and Postman to test POST requests and custom headers that standard browsers cannot easily handle.
 
-Example test uses: ``` curl -X POST http://localhost:8080/api/validate_chirp \
+Example test uses: 
+````
+curl -X POST http://localhost:8080/api/validate_chirp \
   -H "Content-Type: application/json" \
   -d '{"body": "This is a kerfuffle opinion"}'
-``` 
+````
+
+
+## CH5: Storage: 
+ - Set up SQLC to generate type-safe Go code from raw SQL queries.
+ - Added sqlc.yaml config pointing to schema files, query files and generated output files.
+ - Added reuired dependencies: PostgreSQL driver, UUID package and godotenv.
+ - Stored the database connection string in a .env file and loaded it at app startup.
+ - Opened a Postgres connection with database/sql.
+ - Created a shared SQLC queries object and attached it to app config for handler access.
+
 
 
