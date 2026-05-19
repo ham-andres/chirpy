@@ -63,5 +63,10 @@ curl -X POST http://localhost:8080/api/validate_chirp \
  - Opened a Postgres connection with database/sql.
  - Created a shared SQLC queries object and attached it to app config for handler access.
 
+#### L6: feat: add create user endpoint and dev-only reset
 
+- POST /api/users creates a user and returns id, email, timestamps
+- POST /admin/reset now deletes all users (dev environment only)
+- Add PLATFORM env var, return 403 outside dev
+- Add DeleteUsers SQLC query
 
