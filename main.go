@@ -15,6 +15,7 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db *database.Queries
+	platform string
 }
 
 func main() {
@@ -22,21 +23,26 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	dbURL := os.Getenv("DB_URL")
-	db, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		log.Fatal(err)
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
 	}
 
-	dbQueries := database.New(db)
+	dbURL := os.Getenv("DB_URL")
+	dbConn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error opening database: %s",err)
+	}
+
+	dbQueries := database.New(dbConn)
 
 	const filePath = "."
 	const port = "8080"
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},// i didnt did this 
 		db: dbQueries,
+		platform: platform,
 	}
-
 	mux := http.NewServeMux()
 	
 	fsHandler := apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePath)))
@@ -45,7 +51,8 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerCount)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirp)	
+	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/users",apiCfg.handlerUser)
 
 	s := &http.Server {
 			Addr:	":" + port,
