@@ -1,41 +1,23 @@
 package main 
 
 import (
-	"net/http"
-	"encoding/json"
-	"log"
+	"errors"
 	"strings"
 )
 
-func validateChirp( resw http.ResponseWriter, req *http.Request) {
-	type responseVal struct {
-		CleanedBody string `json:"cleaned_body"`
-	}
-
-	type parameters struct {
-		Body string `json:"body"`
-	}
-
-	decoder := json.NewDecoder(req.Body)
-	params := parameters {}
-	err := decoder.Decode(&params)
-	if err != nil {
-		log.Println("error while decoding")
-		respondWithError(resw, http.StatusInternalServerError, "couldn't decode parameters", err)
-		return
-	}
+func validateChirps(body string) (string, error) {
+	
 	const maxChirpLength = 140
-	if len(params.Body) > maxChirpLength {
-		respondWithError(resw, http.StatusBadRequest, "Chirp is too long", nil)
-		return 
+	if len(body) > maxChirpLength {
+		return "", errors.New("chirp too long maxChirpLength = 140")
 	}
 	badWords := map[string]struct{}{
 		"kerfuffle": {},
 		"sharbert": {},
 		"fornax": {},
 	}
-	cleanedBody := cleaner(params.Body, badWords)
-	respondWithJSON(resw, http.StatusOK, responseVal{CleanedBody: cleanedBody})
+	cleanedBody := cleaner(body, badWords)
+	return cleanedBody, nil
 
 }
 

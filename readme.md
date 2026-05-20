@@ -70,3 +70,10 @@ curl -X POST http://localhost:8080/api/validate_chirp \
 - Add PLATFORM env var, return 403 outside dev
 - Add DeleteUsers SQLC query
 
+#### L7: POST /api/chirps - creates new chirps(like tweet)
+  - request body: {body, user_id}
+  - validate_chirp.go checks and return body.
+  - when validation passed, stores in database.
+  - user_id is a foreign key to users(id) with ON DELETE CASCADE
+  - returns 201 status created. and 400 for invalid input.
+
