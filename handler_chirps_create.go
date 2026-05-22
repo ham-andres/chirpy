@@ -10,6 +10,16 @@ import (
 	"github.com/ham-andres/chirpy/internal/database"
 )
 
+	type respondChirp struct {
+		ID        uuid.UUID		`json:"id"`
+		CreatedAt time.Time		`json:"created_at"`
+		UpdatedAt time.Time		`json:"updated_at"`
+		Body      string			`json:"body"`
+		UserID    uuid.UUID		`json:"user_id"`
+	}
+
+
+
 func (cfg *apiConfig) handlerChirps(resw http.ResponseWriter, req *http.Request) {
 	type bodyFields struct {
 		Body string `json:"body"`
@@ -42,14 +52,6 @@ func (cfg *apiConfig) handlerChirps(resw http.ResponseWriter, req *http.Request)
 		log.Println("error while creating chirp in database")
 		respondWithError(resw, http.StatusInternalServerError, "couldn't create chirp in database", err)
 		return 
-	}
-
-	type respondChirp struct {
-		ID        uuid.UUID		`json:"id"`
-		CreatedAt time.Time		`json:"created_at"`
-		UpdatedAt time.Time		`json:"updated_at"`
-		Body      string			`json:"body"`
-		UserID    uuid.UUID		`json:"user_id"`
 	}
 
 	respondWithJSON(resw, http.StatusCreated, respondChirp{
