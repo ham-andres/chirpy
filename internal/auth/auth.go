@@ -3,6 +3,7 @@ package auth
 import (
 			"time"
 			"errors"
+			"fmt"
 
 			"github.com/google/uuid" 
 			"github.com/alexedwards/argon2id"
@@ -11,7 +12,7 @@ import (
 
 type TokenType string
 
-const (tokenTypeAccess TokenType = "chirpy-access")
+const (TokenTypeAccess TokenType = "chirpy-access")
 
 func HashPassword(password string) (string, error) {
 			pWHash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
@@ -32,7 +33,7 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 		mySigningKey := []byte(tokenSecret)
 		claims := &jwt.RegisteredClaims {
-				Issuer:	tokenTypeAccess,
+				Issuer:	string(TokenTypeAccess),
 				IssuedAt:	jwt.NewNumericDate(time.Now()),
 				ExpiresAt:	jwt.NewNumericDate(time.Now().Add(expiresIn)),
 				Subject:	userID.String(),
@@ -45,26 +46,38 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 		return ss, nil
 }
 
+
+// ValidateJWT -
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
-	mySigningKey := []byte(tokenSecret)
-	tok, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, 
-														func(token *jwt.Token)(interface{}, error)
-														{return mySigningKey, nil}
-													)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	claims, ok := tok.Claims.(*jwt.RegisteredClaims)
-	if !ok {
-		return uuid.Nil, errors.New("invalid claims")
-	}
-	id, err := uuid.Parse(claims.Subject)
+	claimsStruct := jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&claimsStruct,
+		func(token *jwt.Token) (interface{}, error) { return []byte(tokenSecret), nil },
+	)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	return id, nil 
+	userIDString, err := token.Claims.GetSubject()
+	if err != nil {
+		return uuid.Nil, err
+	}
 
+	issuer, err := token.Claims.GetIssuer()
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if issuer != string(TokenTypeAccess) {
+		return uuid.Nil, errors.New("invalid issuer")
+	}
+
+	id, err := uuid.Parse(userIDString)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid user ID: %w", err)
+	}
+	return id, nil
 }
+
 
 
