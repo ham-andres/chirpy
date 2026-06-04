@@ -77,3 +77,9 @@ curl -X POST http://localhost:8080/api/validate_chirp \
   - user_id is a foreign key to users(id) with ON DELETE CASCADE
   - returns 201 status created. and 400 for invalid input.
 
+#### L12: Access token and refresh token
+  -  Access token: JWTs, expire in 1 hour 
+  - Refresh Token: Random 256-bit hex strings, stored in DB, expire in 60 days.
+  - POST /api/login - returns both token
+  - POST /api/refresh -- exchanges a valid refresh token for a new access token
+  - POST /api/revoke - invalidate a refresh token by setting revoked_at in DB, meaning stopping the token.
