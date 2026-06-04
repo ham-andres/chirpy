@@ -8,6 +8,8 @@ import (
 
   "github.com/google/uuid"
 	"github.com/ham-andres/chirpy/internal/database"
+	"github.com/ham-andres/chirpy/internal/auth"
+
 )
 
 	type respondChirp struct {
@@ -22,13 +24,26 @@ import (
 
 func (cfg *apiConfig) handlerChirps(resw http.ResponseWriter, req *http.Request) {
 	type bodyFields struct {
-		Body string `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"` // removed userID after creating it from MakeJWT
+	}
+	
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(resw, http.StatusUnauthorized, "Couldn't extract token", err)
+		return
 	}
 
+  verifiedUserID, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(resw, http.StatusUnauthorized, "couldn't validate token", err)
+		return 
+	}
+
+
+	// change is we validate before decoding this time, therefore above code of GetBearerToken
 	decoder := json.NewDecoder(req.Body)
 	bodyField := bodyFields{}
-	err := decoder.Decode(&bodyField)
+	err = decoder.Decode(&bodyField)
 	if err != nil {
 		log.Println("error while decoding body fields")
 		respondWithError(resw, http.StatusBadRequest, "couldn't decode body field", err)
@@ -44,7 +59,7 @@ func (cfg *apiConfig) handlerChirps(resw http.ResponseWriter, req *http.Request)
 
 	chirpCreated, err := cfg.db.CreateChirp(req.Context(), database.CreateChirpParams{
 		Body: cleanedBody,
-		UserID: bodyField.UserID,
+		UserID: verifiedUserID,
 	})
 
 	

@@ -7,6 +7,7 @@ import (
 	"os"
 	"database/sql"
 
+	
 	"github.com/ham-andres/chirpy/internal/database"
   _ "github.com/lib/pq"
 	"github.com/joho/godotenv"
@@ -16,6 +17,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db *database.Queries
 	platform string
+	jwtSecret	string
 }
 
 func main() {
@@ -34,6 +36,11 @@ func main() {
 		log.Fatalf("Error opening database: %s",err)
 	}
 
+	secret := os.Getenv("JWTSecret")
+	if secret == "" {
+		log.Fatal("cannot access JWTSecret")
+	}
+
 	dbQueries := database.New(dbConn)
 
 	const filePath = "."
@@ -42,7 +49,9 @@ func main() {
 		fileserverHits: atomic.Int32{},// i didnt did this 
 		db: dbQueries,
 		platform: platform,
+		jwtSecret:	secret,
 	}
+
 	mux := http.NewServeMux()
 	
 	fsHandler := apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePath)))
@@ -56,6 +65,8 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirpByID)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
+	mux.HandleFunc("POST /api/refresh",apiCfg.handlerRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 
 	s := &http.Server {
 			Addr:	":" + port,

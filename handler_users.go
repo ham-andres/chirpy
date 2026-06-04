@@ -1,64 +1,64 @@
 package main 
-
 import (
 	"net/http"
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/ham-andres/chirpy/internal/auth"
 	"github.com/ham-andres/chirpy/internal/database"
 	"github.com/google/uuid"
 )
+type User struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+	Password  string    `json:"-"`
+}
 
 func (cfg *apiConfig)handlerUser(resw http.ResponseWriter, req *http.Request)  {
-	type user struct {
+	type parameters struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
 	}
 
 	type responseVal struct {
-		ID uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email string `json:"email"`
+		User
 	}
 
 	decoder := json.NewDecoder(req.Body)
-	userParams := user{}
+	params := parameters{}
 
-	err := decoder.Decode(&userParams)
+	err := decoder.Decode(&params)
 	if err != nil {
-		log.Printf("error while decoding %v", err)
+
 		respondWithError(resw, http.StatusBadRequest, "couldn't decode user mail", err)
 
 		return 
 	}
 	
-	hashP, err := auth.HashPassword(userParams.Password)
+	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
-		log.Printf("error while hashing :%v", err)
-		respondWithError(resw, http.StatusBadRequest, "couldn't hash the password", err)
-		return
+		respondWithError(resw, http.StatusInternalServerError, "Couldn't hash password", err)
+		return 
 	}
 
-	params := database.CreateUserParams{
-				Email:	userParams.Email,
-				HashedPassword:	hashP,
-	}
-
-	createdUser, err := 	cfg.db.CreateUser(req.Context(), params)
+	createdUser, err := 	cfg.db.CreateUser(req.Context(), database.CreateUserParams{
+		Email: 					params.Email,
+		HashedPassword:	hashedPassword,
+	})
 	if err != nil {
-		log.Printf("error while creating user %v",err)
 		respondWithError(resw, http.StatusInternalServerError, "couldn't create user", err)
 		return
 	}
 	
 	respondWithJSON(resw, http.StatusCreated, responseVal{
-		ID:	createdUser.ID,
-		CreatedAt:	createdUser.CreatedAt,
-		UpdatedAt:	createdUser.UpdatedAt,
-		Email:	createdUser.Email,
+			User: User{
+					ID:						createdUser.ID,
+					CreatedAt:		createdUser.CreatedAt,
+					UpdatedAt:		createdUser.UpdatedAt,
+					Email:				createdUser.Email,
+			},
 	})
 
 }
