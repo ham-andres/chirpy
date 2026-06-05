@@ -83,3 +83,10 @@ curl -X POST http://localhost:8080/api/validate_chirp \
   - POST /api/login - returns both token
   - POST /api/refresh -- exchanges a valid refresh token for a new access token
   - POST /api/revoke - invalidate a refresh token by setting revoked_at in DB, meaning stopping the token.
+
+## Authorization
+
+  - Implemented JWT-based authentication for protected endpoints, including chirp creation,
+  - update(for email and password),
+  - and deletion of chirps.
+  - Unauthorized or forbidden requests return 401 and 403 respectively.
