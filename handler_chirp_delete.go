@@ -42,6 +42,6 @@ func (cfg *apiConfig) handlerDeleteChirp(resw http.ResponseWriter, req *http.Req
 			return 
 	}
 
-	respondWithJSON(resw, http.StatusNoContent, nil)
-
+	resw.WriteHeader(http.StatusNoContent)
+	return
 }

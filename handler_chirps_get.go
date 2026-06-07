@@ -8,27 +8,58 @@ import (
 )
 
 func (cfg *apiConfig) handlerGetChirps(resw http.ResponseWriter, req *http.Request) {
-		receivedChirps ,err := cfg.db.RetrieveChirps(req.Context())
-		if err != nil {
-			respondWithError(resw, http.StatusInternalServerError, "could request chirps", err)
-			return 
-		}
-		
 		chirps := []respondChirp{}
-		
-		for _, dbChirp := range receivedChirps {
-				c := respondChirp{
-					ID:		dbChirp.ID,
-					CreatedAt:		dbChirp.CreatedAt,
-					UpdatedAt: 		dbChirp.UpdatedAt,
-					Body:					dbChirp.Body,
-					UserID:				dbChirp.UserID,
-			}
-			chirps = append(chirps, c)
-		}
-		respondWithJSON(resw, http.StatusOK, chirps)
 
-	
+		author := req.URL.Query().Get("author_id")
+
+
+		if author != "" {
+				authorID, err := uuid.Parse(author)
+				if err != nil {
+						respondWithError(resw, http.StatusInternalServerError, "couldnt parse author id", err)
+						return
+				}
+				chirpsByAuthor, err := cfg.db.RetrieveChirpsByAuthor(req.Context(), authorID)
+				if err != nil {
+						respondWithError(resw, http.StatusNotFound,"couldnt find chirp by author", err)
+						return
+				}
+		
+				for _, authorChirps := range chirpsByAuthor {
+					c_author := respondChirp {
+						ID:						authorChirps.ID,
+						CreatedAt:		authorChirps.CreatedAt,
+						UpdatedAt:		authorChirps.UpdatedAt,
+						Body:					authorChirps.Body,
+						UserID:				authorChirps.UserID,
+					}
+					chirps = append(chirps, c_author)
+				}
+			
+				respondWithJSON(resw, http.StatusOK, chirps)
+
+		} else {
+			// without author returning all 
+				receivedChirps ,err := cfg.db.RetrieveChirps(req.Context())
+				if err != nil {
+						respondWithError(resw, http.StatusInternalServerError, "could request chirps", err)
+						return 
+				}
+		
+				
+				for _, dbChirp := range receivedChirps {
+					c := respondChirp{
+						ID:		dbChirp.ID,
+						CreatedAt:		dbChirp.CreatedAt,
+						UpdatedAt: 		dbChirp.UpdatedAt,
+						Body:					dbChirp.Body,
+						UserID:				dbChirp.UserID,
+				}
+				chirps = append(chirps, c)
+			}
+			respondWithJSON(resw, http.StatusOK, chirps)
+		}
+		
 }
 
 func (cfg *apiConfig) handlerGetChirpByID( resw http.ResponseWriter, req *http.Request) {
@@ -53,5 +84,6 @@ func (cfg *apiConfig) handlerGetChirpByID( resw http.ResponseWriter, req *http.R
 		}
 
 		respondWithJSON(resw, http.StatusOK, chirp)
+		return
 
 }

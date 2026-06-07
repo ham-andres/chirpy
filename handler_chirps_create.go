@@ -18,6 +18,7 @@ import (
 		UpdatedAt time.Time		`json:"updated_at"`
 		Body      string			`json:"body"`
 		UserID    uuid.UUID		`json:"user_id"`
+
 	}
 
 
@@ -76,6 +77,7 @@ func (cfg *apiConfig) handlerChirps(resw http.ResponseWriter, req *http.Request)
 		Body:					chirpCreated.Body,
 		UserID:				chirpCreated.UserID,
 	})
+	return
 }
 
 

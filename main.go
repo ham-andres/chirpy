@@ -18,6 +18,7 @@ type apiConfig struct {
 	db *database.Queries
 	platform string
 	jwtSecret	string
+	polkaKey	string
 }
 
 func main() {
@@ -40,6 +41,11 @@ func main() {
 	if secret == "" {
 		log.Fatal("cannot access JWTSecret")
 	}
+	
+	keyPolka := os.Getenv("POLKA_KEY")
+	if keyPolka == ""{
+		log.Fatalf("empty polka api key")
+	}
 
 	dbQueries := database.New(dbConn)
 
@@ -50,6 +56,7 @@ func main() {
 		db: dbQueries,
 		platform: platform,
 		jwtSecret:	secret,
+		polkaKey:		keyPolka,
 	}
 
 	mux := http.NewServeMux()
@@ -69,6 +76,7 @@ func main() {
 	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 	mux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
 	mux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerDeleteChirp)
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerWebhook)
 
 	s := &http.Server {
 			Addr:	":" + port,

@@ -25,5 +25,6 @@ func (cfg *apiConfig) handlerRevoke(resw http.ResponseWriter, req *http.Request)
 		return
 	}
 	resw.WriteHeader(http.StatusNoContent)
+	return
 
 }
